@@ -21,7 +21,8 @@ import (
 type Monitor struct {
 	client *docker.Client
 
-	envs map[string]map[string]string
+	envs       map[string]map[string]string
+	logDrivers map[string]string
 
 	agentId      string
 	agentImage   string
@@ -65,7 +66,8 @@ func NewMonitor() *Monitor {
 	m := &Monitor{
 		client: client,
 
-		envs: make(map[string]map[string]string),
+		envs:       make(map[string]map[string]string),
+		logDrivers: make(map[string]string),
 
 		agentId:      "unknown",          // updated during handleRunning
 		agentImage:   "convox/agent:dev", // updated during handleRunning

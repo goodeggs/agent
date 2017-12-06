@@ -156,8 +156,11 @@ func (m *Monitor) handleCreate(id string) {
 
 	m.setEnv(id, env)
 
+	logDriver := container.HostConfig.LogConfig.Type
+	m.setLogDriver(id, logDriver)
+
 	// create a an awslogger and associated CloudWatch Logs LogGroup
-	if env["LOG_GROUP"] != "" {
+	if logDriver == "json-file" && env["LOG_GROUP"] != "" {
 		awslogger, aerr := m.StartAWSLogger(container, env["LOG_GROUP"])
 		if aerr != nil {
 			m.logSystemf("container handleCreate StartAWSLogger logGroup=%s process=%s err=%q", env["LOG_GROUP"], env["PROCESS"], err)
@@ -227,9 +230,13 @@ func (m *Monitor) handleStart(id string) {
 	m.updateCgroups(id)
 
 	if id != m.agentId {
-		if env, ok := m.getEnv(id); ok {
-			if env["LOG_GROUP"] != "" {
-				m.subscribeLogs(id)
+		if logDriver, ok := m.getLogDriver(id); ok {
+			if logDriver == "json-file" {
+				if env, ok := m.getEnv(id); ok {
+					if env["LOG_GROUP"] != "" {
+						m.subscribeLogs(id)
+					}
+				}
 			}
 		}
 	}
@@ -539,6 +546,21 @@ func (m *Monitor) getEnv(id string) (map[string]string, bool) {
 
 	env, ok := m.envs[id]
 	return env, ok
+}
+
+func (m *Monitor) setLogDriver(id, logDriver string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	m.logDrivers[id] = logDriver
+}
+
+func (m *Monitor) getLogDriver(id string) (string, bool) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	logDriver, ok := m.logDrivers[id]
+	return logDriver, ok
 }
 
 func (m *Monitor) setEnv(id string, env map[string]string) {
