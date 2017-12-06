@@ -51,7 +51,7 @@ func (m *Monitor) handleRunning() {
 		// Don't subscribe and stream logs from the agent container itself
 		img := container.Image
 
-		if strings.HasPrefix(img, "convox/agent") || strings.HasPrefix(img, "agent/agent") {
+		if strings.HasPrefix(img, "goodeggs/convox-agent") || strings.HasPrefix(img, "agent/agent") {
 			m.agentId = container.ID
 			m.agentImage = img
 
